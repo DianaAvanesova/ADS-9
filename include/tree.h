@@ -1,32 +1,35 @@
 // Copyright 2022 NNTU-CS
-#ifndef INCLUDE_TREE_H_
-#define INCLUDE_TREE_H_
+#ifndef PERM_TREE_H_
+#define PERM_TREE_H_
 
 #include <vector>
 
-struct Node {
-    char data;
-    std::vector<Node*> descendants;
+class TreeNode {
+ public:
+    char label;
+    std::vector<TreeNode*> subnodes;
 
-    explicit Node(char d);
-    ~Node();
+    explicit TreeNode(char l);
+    ~TreeNode();
 };
 
-class PermutationTree {
+class PMTree {
  private:
-    Node* head;
+    TreeNode* base;
 
-    void construct(Node*, std::vector<char>);
-    void gather(Node*, std::vector<char>&, std::vector<std::vector<char>>&);
-    std::vector<char> extract_by_idx(Node*, int&, int);
+    void expand(TreeNode* parent, std::vector<char> rest);
+    void traverse(TreeNode* curr,
+                  std::vector<char>& route,
+                  std::vector<std::vector<char>>& results);
+    std::vector<char> fetch_by_order(TreeNode* curr, int& idx, int goal);
 
  public:
-    explicit PermutationTree(const std::vector<char>& input);
-    ~PermutationTree();
+    explicit PMTree(const std::vector<char>& chars);
+    ~PMTree();
 
-    friend std::vector<std::vector<char>> all_permutations(PermutationTree&);
-    friend std::vector<char> permutation_at(PermutationTree&, int);
-    friend std::vector<char> direct_perm_access(PermutationTree&, int);
+    friend std::vector<std::vector<char>> getAllPerms(PMTree& tree);
+    friend std::vector<char> getPerm1(PMTree& tree, int num);
+    friend std::vector<char> getPerm2(PMTree& tree, int num);
 };
 
-#endif  // INCLUDE_TREE_H_
+#endif  // PERM_TREE_H_
