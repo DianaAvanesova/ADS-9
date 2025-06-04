@@ -1,6 +1,6 @@
 // Copyright 2022 NNTU-CS
-#ifndef PERM_TREE_H_
-#define PERM_TREE_H_
+#ifndef INCLUDE_TREE_H_
+#define INCLUDE_TREE_H_
 
 #include <vector>
 
@@ -32,4 +32,5 @@ class PMTree {
     friend std::vector<char> getPerm2(PMTree& tree, int num);
 };
 
-#endif  // PERM_TREE_H_
+
+#endif  // INCLUDE_TREE_H_
