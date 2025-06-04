@@ -3,108 +3,83 @@
 #include  <fstream>
 #include  <locale>
 #include  <cstdlib>
-#include <algorithm>
-#include <memory>
-#include <stdexcept>
 #include <vector>
+#include <algorithm>
 #include  "tree.h"
 
-
-Node::Node(char value) : val(value) {}
-
-PMTree::PMTree(const std::vector<char>& items) {
-  root = std::make_shared<Node>('*');
-  build(root, items);
+TreeNode::TreeNode(char val) : value(val) {}
+TreeNode::~TreeNode() {
+  for (auto child : children)
+    delete child;
 }
 
-void PMTree::build(std::shared_ptr<Node> node, std::vector<char> remaining) {
-  if (remaining.empty()) return;
+PMTree::PMTree(const std::vector<char>& in) {
+  root = new TreeNode(0);
+  build(root, in);
+}
 
+PMTree::~PMTree() {
+    delete root;
+}
+
+void PMTree::build(TreeNode* node, std::vector<char> remaining) {
   std::sort(remaining.begin(), remaining.end());
-
   for (size_t i = 0; i < remaining.size(); ++i) {
-    char current = remaining[i];
-    auto child = std::make_shared<Node>(current);
+    char val = remaining[i];
+    TreeNode* child = new TreeNode(val);
     node->children.push_back(child);
-
     std::vector<char> next = remaining;
     next.erase(next.begin() + i);
-
     build(child, next);
   }
 }
 
-void PMTree::traverse(std::shared_ptr<Node> node, std::vector<char>& path) {
-  if (node->val != '*') {
-    path.push_back(node->val);
-  }
-
+void PMTree::collect(TreeNode* node, std::vector<char>& path,
+std::vector<std::vector<char>>& result) {
+  if (node->value != 0)
+    path.push_back(node->value);
   if (node->children.empty()) {
-    permutations.push_back(path);
+        result.push_back(path);
   } else {
-    for (const auto& child : node->children) {
-      traverse(child, path);
-    }
+    for (auto child : node->children)
+      collect(child, path, result);
   }
-
-  if (node->val != '*') {
+  if (!path.empty() && node->value != 0)
     path.pop_back();
-  }
-}
-
-std::vector<std::vector<char>> PMTree::getAllPerms() {
-  permutations.clear();
-  std::vector<char> path;
-  traverse(root, path);
-  return permutations;
-}
-
-std::shared_ptr<Node> PMTree::getRoot() {
-  return root;
 }
 
 std::vector<std::vector<char>> getAllPerms(PMTree& tree) {
-  return tree.getAllPerms();
+  std::vector<std::vector<char>> result;
+  std::vector<char> path;
+  tree.collect(tree.root, path, result);
+  return result;
 }
 
 std::vector<char> getPerm1(PMTree& tree, int num) {
-  auto all = tree.getAllPerms();
-  if (num <= 0 || num > static_cast<int>(all.size())) return {};
-  return all[num - 1];
+  auto perms = getAllPerms(tree);
+  return (num > 0 && num <= perms.size()) ? perms[num - 1]
+    : std::vector<char>{};
+}
+
+std::vector<char> PMTree::getPermByIndex(TreeNode* node,
+int& index, int target) {
+  if (node->children.empty()) {
+    ++index;
+    return (index == target)
+      ? std::vector<char>{node->value} : std::vector<char>{};
+  }
+  for (auto child : node->children) {
+    auto result = getPermByIndex(child, index, target);
+    if (!result.empty()) {
+      if (node->value != 0)
+        result.insert(result.begin(), node->value);
+      return result;
+    }
+  }
+  return {};
 }
 
 std::vector<char> getPerm2(PMTree& tree, int num) {
-  std::vector<char> result;
-  std::shared_ptr<Node> current = tree.getRoot();
-  int index = num - 1;
-
-  int n = static_cast<int>(current->children.size());
-
-  std::vector<int> factorials(13, 1);
-  for (int i = 1; i < 13; ++i)
-    factorials[i] = factorials[i - 1] * i;
-
-  if (num <= 0 || num > factorials[n])
-    return {};
-
-  while (!current->children.empty()) {
-    int f = factorials[n - 1];
-    int pos = index / f;
-    index %= f;
-
-    if (pos >= static_cast<int>(current->children.size()))
-      return {};
-
-    std::sort(current->children.begin(), current->children.end(),
-              [](const std::shared_ptr<Node>& a,
-                 const std::shared_ptr<Node>& b) {
-                return a->val < b->val;
-              });
-
-    current = current->children[pos];
-    result.push_back(current->val);
-    --n;
-  }
-
-  return result;
+  int index = 0;
+  return tree.getPermByIndex(tree.root, index, num);
 }
