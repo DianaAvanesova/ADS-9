@@ -13,14 +13,14 @@ struct Node {
 };
 
 class PermutationTree {
-private:
+ private:
     Node* head;
 
     void construct(Node*, std::vector<char>);
     void gather(Node*, std::vector<char>&, std::vector<std::vector<char>>&);
     std::vector<char> extract_by_idx(Node*, int&, int);
 
-public:
+ public:
     explicit PermutationTree(const std::vector<char>& input);
     ~PermutationTree();
 
