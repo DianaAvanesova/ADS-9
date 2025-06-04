@@ -1,85 +1,78 @@
 // Copyright 2022 NNTU-CS
-#include  <iostream>
-#include  <fstream>
-#include  <locale>
-#include  <cstdlib>
-#include <vector>
+#include <iostream>
 #include <algorithm>
-#include  "tree.h"
+#include <vector>
+#include "tree.h"
 
-TreeNode::TreeNode(char val) : value(val) {}
-TreeNode::~TreeNode() {
-  for (auto child : children)
-    delete child;
+Node::Node(char d) : data(d) {}
+
+Node::~Node() {
+    for (auto descendant : descendants)
+        delete descendant;
 }
 
-PMTree::PMTree(const std::vector<char>& in) {
-  root = new TreeNode(0);
-  build(root, in);
+PermutationTree::PermutationTree(const std::vector<char>& in) {
+    head = new Node('\0');
+    construct(head, in);
 }
 
-PMTree::~PMTree() {
-    delete root;
+PermutationTree::~PermutationTree() {
+    delete head;
 }
 
-void PMTree::build(TreeNode* node, std::vector<char> remaining) {
-  std::sort(remaining.begin(), remaining.end());
-  for (size_t i = 0; i < remaining.size(); ++i) {
-    char val = remaining[i];
-    TreeNode* child = new TreeNode(val);
-    node->children.push_back(child);
-    std::vector<char> next = remaining;
-    next.erase(next.begin() + i);
-    build(child, next);
-  }
-}
-
-void PMTree::collect(TreeNode* node, std::vector<char>& path,
-std::vector<std::vector<char>>& result) {
-  if (node->value != 0)
-    path.push_back(node->value);
-  if (node->children.empty()) {
-        result.push_back(path);
-  } else {
-    for (auto child : node->children)
-      collect(child, path, result);
-  }
-  if (!path.empty() && node->value != 0)
-    path.pop_back();
-}
-
-std::vector<std::vector<char>> getAllPerms(PMTree& tree) {
-  std::vector<std::vector<char>> result;
-  std::vector<char> path;
-  tree.collect(tree.root, path, result);
-  return result;
-}
-
-std::vector<char> getPerm1(PMTree& tree, int num) {
-  auto perms = getAllPerms(tree);
-  return (num > 0 && num <= perms.size()) ? perms[num - 1]
-    : std::vector<char>{};
-}
-
-std::vector<char> PMTree::getPermByIndex(TreeNode* node,
-int& index, int target) {
-  if (node->children.empty()) {
-    ++index;
-    return (index == target)
-      ? std::vector<char>{node->value} : std::vector<char>{};
-  }
-  for (auto child : node->children) {
-    auto result = getPermByIndex(child, index, target);
-    if (!result.empty()) {
-      if (node->value != 0)
-        result.insert(result.begin(), node->value);
-      return result;
+void PermutationTree::construct(Node* parent, std::vector<char> rem) {
+    std::sort(rem.begin(), rem.end());
+    for (char ch : rem) {
+        Node* kid = new Node(ch);
+        parent->descendants.push_back(kid);
+        std::vector<char> temp = rem;
+        temp.erase(std::remove(temp.begin(), temp.end(), ch), temp.end());
+        construct(kid, temp);
     }
-  }
-  return {};
 }
 
-std::vector<char> getPerm2(PMTree& tree, int num) {
-  int index = 0;
-  return tree.getPermByIndex(tree.root, index, num);
+void PermutationTree::gather(Node* current_node, std::vector<char>& acc_path, std::vector<std::vector<char>>& collected) {
+    if (current_node->data != '\0')
+        acc_path.push_back(current_node->data);
+    if (current_node->descendants.empty())
+        collected.push_back(acc_path);
+    else
+        for (auto descendant : current_node->descendants)
+            gather(descendant, acc_path, collected);
+    if (!acc_path.empty() && current_node->data != '\0')
+        acc_path.pop_back();
+}
+
+std::vector<std::vector<char>> all_permutations(PermutationTree& tree) {
+    std::vector<std::vector<char>> permutations;
+    std::vector<char> intermediate;
+    tree.gather(tree.head, intermediate, permutations);
+    return permutations;
+}
+
+std::vector<char> permutation_at(PermutationTree& tree, int idx) {
+    auto perms = all_permutations(tree);
+    return ((idx > 0 && static_cast<size_t>(idx) <= perms.size())) ? perms[idx - 1] : std::vector<char>();
+}
+
+std::vector<char> PermutationTree::extract_by_idx(Node* cur_node, int& counter, int target) {
+    if (cur_node->descendants.empty()) {
+        ++counter;
+        return (counter == target) ? std::vector<char>{cur_node->data} : std::vector<char>{};
+    }
+    for (auto descendant : cur_node->descendants) {
+        auto res = extract_by_idx(descendant, counter, target);
+        if (!res.empty()) {
+            if (cur_node->data != '\0') {
+                res.insert(res.begin(), cur_node->data);
+            }
+            return res;
+        }
+    }
+    return {};
+}
+
+std::vector<char> direct_perm_access(PermutationTree& tree, int pos) {
+    int count = 0;
+    return tree.extract_by_idx(tree.head, count, pos);
 }
