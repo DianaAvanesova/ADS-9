@@ -55,14 +55,14 @@ std::vector<std::vector<char>> getAllPerms(PMTree& tree) {
 
 std::vector<char> getPerm1(PMTree& tree, int num) {
     auto perms = getAllPerms(tree);
-    return(num>0 && num <= perms.size()) ? 
+    return(num > 0 && num <= perms.size()) ?
         perms[num-1] : std::vector<char>{};
 }
 
 std::vector<char> PMTree::fetch_by_order(TreeNode* node, int& cnt, int target) {
     if (node->subnodes.empty()) {
         ++cnt;
-        return(cnt == target) ? std::vector<char>{node->label} 
+        return(cnt == target) ? std::vector<char>{node->label}
             : std::vector<char>{};
     }
     for (auto sn : node->subnodes) {
